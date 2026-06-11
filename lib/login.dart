@@ -1,3 +1,4 @@
+import 'package:dinemenow/registro-cliente.dart';
 import 'package:flutter/material.dart';
 
 // Widget principal del Login
@@ -23,7 +24,7 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
       //El Scaffold es el contenedor principal de la pantalla Flutter.
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color.fromRGBO(255, 247, 238, 0.5),
 
       body: SafeArea(
         //Evita que el contenido quede debajo de la barra de estado o el notch del dispositivo.
@@ -92,6 +93,7 @@ class _LoginState extends State<Login> {
 
               // TARJETA
               Card(
+                color: Colors.white,
                 elevation: 8,
 
                 shape: RoundedRectangleBorder(
@@ -186,7 +188,17 @@ class _LoginState extends State<Login> {
                         
                       ),
                       const SizedBox(height: 15),
-                      
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+
+                            MaterialPageRoute(
+                              builder: (context) => const RegistroCliente(),
+                            ),
+                          );
+                        },
+                        child:
                       const Text(
                         "¿Olvidaste tu contraseña?",
                           style: TextStyle(
@@ -194,6 +206,7 @@ class _LoginState extends State<Login> {
                           fontStyle: FontStyle.italic,
                           ),
                         ),
+                      ),
                     ],
                   ),
                 ),
