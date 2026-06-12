@@ -1,5 +1,8 @@
 import 'package:dinemenow/registro-cliente.dart';
 import 'package:flutter/material.dart';
+import 'services/auth_service.dart';
+import 'cliente_home.dart';
+
 
 // Widget principal del Login
 class Login extends StatefulWidget {
@@ -19,6 +22,81 @@ class _LoginState extends State<Login> {
 
   // Variable que controla si la contraseñase muestra o se oculta
   bool ocultarPassword = true;
+
+  // Variables de estado
+  bool loading = false;
+  String? error;
+  //metodo para iniciar sesion
+  Future<void> iniciarSesion() async {
+  if (emailController.text.trim().isEmpty ||
+      passwordController.text.isEmpty) {
+    setState(() {
+      error = "Ingresa correo y contraseña";
+    });
+    return;
+  }
+
+  try {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+
+    final response = await AuthService.login(
+      correo: emailController.text.trim(),
+      password: passwordController.text,
+    );
+
+    print("Respuesta Login:");
+    print(response);
+
+    final roles = response["roles"];
+
+    if (roles == null || roles.isEmpty) {
+      throw Exception("El usuario no tiene roles asignados");
+    }
+
+    final role = roles[0].toString().toLowerCase();
+
+    if (response["mustChangePassword"] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Debe cambiar su contraseña"),
+        ),
+      );
+
+      return;
+    }
+      
+    if (role.contains("cliente") || role.contains("ROL_CLIENTE")) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ClienteHome()),
+        );
+        
+      //} else if (role.contains("mesero") || role.contains("empleado")) {
+      //  Navigator.pushReplacement(
+      //    context,
+      //    MaterialPageRoute(builder: (context) => const MeseroHome()),
+      //  );
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Rol no reconocido: $role"),
+        ),
+      );
+    }
+  } catch (e) {
+    setState(() {
+      error = e.toString().replaceAll("Exception: ", "");
+    });
+  } finally {
+    setState(() {
+      loading = false;
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +230,18 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ),
+                      if (error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            error!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
 
                       const SizedBox(height: 30),
 
@@ -161,11 +251,7 @@ class _LoginState extends State<Login> {
                         height: 55,
 
                         child: ElevatedButton(
-                          onPressed: () {
-                            print("Usuario: ${emailController.text}");
-
-                            print("Password: ${passwordController.text}");
-                          },
+                          onPressed: loading ? null : iniciarSesion,
 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color.fromRGBO(241, 56, 0, 0.774),
@@ -175,14 +261,18 @@ class _LoginState extends State<Login> {
                             ),
                           ),
 
-                          child: const Text(
-                            "INGRESAR",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: loading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "INGRESAR",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                           
                         ),
                         
