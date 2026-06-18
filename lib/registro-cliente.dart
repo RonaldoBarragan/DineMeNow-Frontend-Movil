@@ -79,8 +79,8 @@ class _RegistroClienteState extends State<RegistroCliente> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       color: const Color(0xFF00A86B),
                       borderRadius: BorderRadius.circular(40),
