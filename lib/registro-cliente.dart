@@ -243,12 +243,6 @@ class _RegistroClienteState extends State<RegistroCliente> {
                       ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: numeroCalleController,
-                        label: "Número",
-                        icono: Icons.home,
-                      ),
-                      const SizedBox(height: 10),
-                      CampoTexto(
                         controller: ciudadController,
                         label: "Ciudad",
                         icono: Icons.location_city,
