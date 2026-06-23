@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dinemenow/RestaurantCard.dart';
+// Asegúrate de que esta ruta apunte correctamente a donde guardaste tu servicio
+import 'package:dinemenow/services/homepage_services.dart';
 
 class Cliente_home extends StatefulWidget {
   const Cliente_home({Key? key}) : super(key: key);
@@ -11,6 +13,12 @@ class Cliente_home extends StatefulWidget {
 class _Cliente_homeState extends State<Cliente_home> {
   // Variable de control para expandir/colapsar los filtros
   bool _showFilters = false;
+
+  // --- CONEXIÓN CON EL SERVICIO ---
+  final ClienteService _apiService = ClienteService();
+  List<dynamic> _clientes = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
 
   // Notifiers para guardar la selección de los chips
   final ValueNotifier<String> _selectedCocinaNotifier = ValueNotifier<String>(
@@ -39,6 +47,29 @@ class _Cliente_homeState extends State<Cliente_home> {
   ];
   final List<String> precios = ['Todos', '\$', '\$\$', '\$\$\$', '\$\$\$\$'];
 
+  // --- CICLO DE VIDA: CARGA LA API AL INICIAR ---
+  @override
+  void initState() {
+    super.initState();
+    _obtenerDatosDelBackend();
+  }
+
+  Future<void> _obtenerDatosDelBackend() async {
+    try {
+      final data = await _apiService.obtenerAllClientes();
+      setState(() {
+        _clientes = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage =
+            'No se pudo conectar al servidor de DineMeNow.\nVerifica si Spring Boot está corriendo.';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,14 +91,12 @@ class _Cliente_homeState extends State<Cliente_home> {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
-                      // Si está expandido toma la altura necesaria, si no, se reduce a 0
                       height: _showFilters ? 220 : 0,
                       child: AnimatedOpacity(
                         duration: const Duration(milliseconds: 200),
                         opacity: _showFilters ? 1.0 : 0.0,
                         child: SingleChildScrollView(
-                          physics:
-                              const NeverScrollableScrollPhysics(), // Evita scroll interno molesto
+                          physics: const NeverScrollableScrollPhysics(),
                           child: Column(
                             children: [
                               const SizedBox(height: 16),
@@ -94,10 +123,9 @@ class _Cliente_homeState extends State<Cliente_home> {
                       ),
                     ),
 
-                    // ---------------------------------------------------------
                     const SizedBox(height: 24),
                     const Text(
-                      'Todos los restaurantes',
+                      'Resultados desde el Backend',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -109,27 +137,65 @@ class _Cliente_homeState extends State<Cliente_home> {
               ),
             ),
 
-            // Lista de Restaurantes
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return const Padding(
-                    padding: EdgeInsets.only(bottom: 16.0),
-                    child: RestaurantCard(
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-                      name: 'La Mesa Criolla',
-                      cuisineAndZone: 'Colombiana • Zona Rosa',
-                      distance: '1.2 km',
-                      closingTime: '22:00',
-                      priceCategory: '\$\$',
-                      rating: 4.5,
+            // --- RENDERIZADO CONDICIONAL DE LA API ---
+            if (_isLoading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 60.0),
+                  child: Center(
+                    child: CircularProgressIndicator(color: Colors.deepOrange),
+                  ),
+                ),
+              )
+            else if (_errorMessage.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text(
+                      _errorMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
-                  );
-                }, childCount: 5),
+                  ),
+                ),
+              )
+            else if (_clientes.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text(
+                      'No hay registros disponibles en este momento.',
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    // Obtenemos el cliente/item actual de la lista
+                    final item = _clientes[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: RestaurantCard(
+                        // NOTA: Reemplaza las llaves 'nombre', 'correo' por las que vengan en tu ClienteDto de Java
+                        name: item['nombre'] ?? 'Sin Nombre',
+                        cuisineAndZone: item['correo'] ?? 'Sin Correo',
+                        imageUrl:
+                            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
+                        distance: 'Activo',
+                        closingTime: '--:--',
+                        priceCategory: '\$\$',
+                        rating: 5.0,
+                      ),
+                    );
+                  }, childCount: _clientes.length),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -177,7 +243,7 @@ class _Cliente_homeState extends State<Cliente_home> {
     );
   }
 
-  // Componente de Barra de Búsqueda (Actualizado con Toggle)
+  // Componente de Barra de Búsqueda (Con Toggle de Filtros)
   Widget _buildSearchBar() {
     return Row(
       children: [
@@ -202,11 +268,10 @@ class _Cliente_homeState extends State<Cliente_home> {
           ),
         ),
         const SizedBox(width: 12),
-        // GestureDetector para interceptar el click y alternar el estado
         GestureDetector(
           onTap: () {
             setState(() {
-              _showFilters = !_showFilters; // Cambia entre true y false
+              _showFilters = !_showFilters;
             });
           },
           child: Container(
@@ -223,7 +288,7 @@ class _Cliente_homeState extends State<Cliente_home> {
     );
   }
 
-  // Componente para las filas de Chips (Optimizado sin chulito ni bordes feos)
+  // Componente para las filas de Chips
   Widget _buildInlineFilterSection({
     required String title,
     required List<String> options,
@@ -256,8 +321,7 @@ class _Cliente_homeState extends State<Cliente_home> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
-                      showCheckmark:
-                          false, // Quita el chulito integrado de Flutter
+                      showCheckmark: false,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
                         vertical: 4,
@@ -279,9 +343,7 @@ class _Cliente_homeState extends State<Cliente_home> {
                       pressElevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
-                        side: const BorderSide(
-                          color: Colors.transparent,
-                        ), // Elimina bordes grises indeseados
+                        side: const BorderSide(color: Colors.transparent),
                       ),
                       onSelected: (accepted) {
                         if (accepted) {
