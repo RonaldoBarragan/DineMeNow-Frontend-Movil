@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
 import 'cliente_home.dart';
 import 'widgets/inputtext.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 
 
 // Widget principal del Login
@@ -28,70 +30,78 @@ class _LoginState extends State<Login> {
   bool loading = false;
   String? error;
   //metodo para iniciar sesion
-  Future<void> iniciarSesion() async {
-  if (emailController.text.trim().isEmpty ||
-      passwordController.text.isEmpty) {
-    setState(() {
-      error = "Ingresa correo y contraseña";
-    });
-    return;
-  }
-
-  try {
-    setState(() {
-      loading = true;
-      error = null;
-    });
-
-    final response = await AuthService.login(
-      correo: emailController.text.trim(),
-      password: passwordController.text,
-    );
-
-    print("Respuesta Login:");
-    print(response);
-
-    final roles = response["roles"];
-
-    if (roles == null || roles.isEmpty) {
-      throw Exception("El usuario no tiene roles asignados");
-    }
-
-    final role = roles[0].toString().toLowerCase();
-
-    if (response["mustChangePassword"] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Debe cambiar su contraseña"),
-        ),
-      );
+ Future<void> iniciarSesion() async {
+    if (emailController.text.trim().isEmpty ||
+        passwordController.text.isEmpty) {
+      setState(() {
+        error = "Ingresa correo y contraseña";
+      });
 
       return;
     }
-      
-    if (role.contains("cliente") || role.contains("ROL_CLIENTE")) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ClienteHome()),
+
+    try {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+
+      final response = await AuthService.login(
+        correo: emailController.text.trim(),
+
+        password: passwordController.text,
+      );
+
+      print("Respuesta Login:");
+      print(response);
+
+      // 🔥 AQUÍ GUARDAMOS COMO EL CONTEXT DE REACT
+
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+
+      await auth.login(response);
+
+      // obtenemos usuario ya normalizado
+
+      final user = auth.user;
+
+      if (user == null) {
+        throw Exception("No se pudo cargar usuario");
+      }
+
+      // validar cambio de contraseña
+
+      if (user.mustChangePassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Debe cambiar su contraseña")),
         );
 
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Rol no reconocido: $role"),
-        ),
-      );
+        return;
+      }
+
+      // navegación por rol
+
+      if (user.role == "cliente") {
+        Navigator.pushReplacement(
+          context,
+
+          MaterialPageRoute(builder: (context) => const ClienteHome()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Rol no reconocido: ${user.role}")),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        error = e.toString().replaceAll("Exception: ", "");
+      });
+    } finally {
+      setState(() {
+        loading = false;
+      });
     }
-  } catch (e) {
-    setState(() {
-      error = e.toString().replaceAll("Exception: ", "");
-    });
-  } finally {
-    setState(() {
-      loading = false;
-    });
   }
-}
 
   @override
   Widget build(BuildContext context) {
