@@ -2,6 +2,8 @@ import 'package:dinemenow/widgets/customappbar.dart';
 import 'package:dinemenow/widgets/inputselect.dart';
 import 'package:dinemenow/widgets/inputtext.dart';
 import 'package:flutter/material.dart';
+import 'services/cliente-service.dart';
+
 
 // Widget principal del Registro de Cliente
 class RegistroCliente extends StatefulWidget {
@@ -12,6 +14,10 @@ class RegistroCliente extends StatefulWidget {
 }
 
 class _RegistroClienteState extends State<RegistroCliente> {
+
+
+  // LLAVE GLOBAL PARA VALIDAR FORM
+  final _formKey = GlobalKey<FormState>();
 
   // Controladores para los campos de texto del formulario de registro
 
@@ -36,11 +42,70 @@ class _RegistroClienteState extends State<RegistroCliente> {
 
   String? tipoDocumentoSeleccionado;
 
+  // variable de carga
+  bool loading = false;
+  String? error;
 
 
-  // Controlador del campo usuario
 
 
+
+  Future<void> registrar() async {
+    // 1. Validar el formulario antes de hacer cualquier otra cosa
+  if (!_formKey.currentState!.validate()) {
+    // Si falta algún campo obligatorio, Flutter mostrará los errores en rojo
+    // y detenemos la ejecución aquí.
+    return; 
+  }
+
+    try {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+
+      final response = await ClienteService.registrarCliente(
+        nombre: nombreController.text,
+        apellido: apellidoController.text,
+        tipoDocumento: tipoDocumentoSeleccionado ?? "",
+        numeroDocumento: numeroDocumentoController.text,
+
+        calle: calleController.text,
+
+        numeroCalle: numeroCalleController.text,
+
+        ciudad: ciudadController.text,
+
+        codigoPostal: codigoPostalController.text,
+
+        pais: paisController.text,
+
+        correo: correoController.text,
+
+        telefono: telefonoController.text,
+
+        password: passwordController.text,
+      );
+
+      print("Registro exitoso");
+
+      print(response);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cliente registrado correctamente")),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() {
+        error = e.toString().replaceAll("Exception:", "");
+      });
+    } finally {
+      setState(() {
+        loading = false;
+      });
+    }
+  }
  
   // TextEditingController permite acceder al contenido escrito por el usuario.
 
@@ -61,6 +126,8 @@ class _RegistroClienteState extends State<RegistroCliente> {
       backgroundColor: const Color.fromARGB(252, 255, 255, 255),
 
       body: SafeArea(
+        child: Form(
+        key: _formKey,
         //Evita que el contenido quede debajo de la barra de estado o el notch del dispositivo.
         child: SingleChildScrollView(
           
@@ -137,16 +204,28 @@ class _RegistroClienteState extends State<RegistroCliente> {
                       const SizedBox(height: 15),
                       // USUARIO
                       CampoTexto(
-                        controller: nombreController,
-                        label: "Nombre",
-                        icono: Icons.person_outline,
-                      ),
+                      controller: nombreController,
+                      label: "Nombre",
+                      icono: Icons.person_outline,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El nombre es obligatorio";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 10),
 
                         CampoTexto(
                           controller: apellidoController,
                           label: "Apellido",
                           icono: Icons.assignment_ind_outlined,
+                          validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El apellido es obligatorio";
+                        }
+                        return null;
+                      },
                         ),
 
                       const SizedBox(height: 15),
@@ -188,10 +267,19 @@ class _RegistroClienteState extends State<RegistroCliente> {
                       const SizedBox(height: 10),
 
                       CampoTexto(
-                        controller: numeroDocumentoController,
-                        label: "Número de documento",
-                        icono: Icons.document_scanner,
-                      ),
+                      controller: numeroDocumentoController,
+                      label: "Número de documento",
+                      icono: Icons.document_scanner,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El número de documento es obligatorio";
+                        }
+                        if (valor.trim().length < 5) {
+                          return "El número de documento no es válido";
+                        }
+                        return null;
+                      },
+                    ),
 
                       const SizedBox(height: 15),
                       const Align(
@@ -206,17 +294,39 @@ class _RegistroClienteState extends State<RegistroCliente> {
                       ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: correoController,
-                        label: "Correo electrónico",
-                        icono: Icons.email,
-                      ),
+                      controller: correoController,
+                      label: "Correo electrónico",
+                      icono: Icons.email,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El correo es obligatorio";
+                        }
+                        // Validación extra con Regex para ver si es un correo válido
+                        final bool correoValido = RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(valor);
+                        if (!correoValido) {
+                          return "Ingresa un correo electrónico válido";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 10),
      
                       CampoTexto(
-                        controller: telefonoController,
-                        label: "Número de teléfono",
-                        icono: Icons.phone,
-                      ),
+                      controller: telefonoController,
+                      label: "Número de teléfono",
+                      icono: Icons.phone,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El número de teléfono es obligatorio";
+                        }
+                        if (valor.trim().length < 7) {
+                          return "El número de teléfono debe tener mínimo 7 dígitos";
+                        }
+                        return null;
+                      },
+                    ),
 
                       const SizedBox(height: 10),
                       Align(
@@ -231,34 +341,64 @@ class _RegistroClienteState extends State<RegistroCliente> {
                       ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: calleController,
-                        label: "Calle",
-                        icono: Icons.streetview,
-                      ),
+                      controller: calleController,
+                      label: "Calle",
+                      icono: Icons.streetview,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "La calle es obligatoria";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: numeroCalleController,
-                        label: "Número",
-                        icono: Icons.home,
-                      ),
+                      controller: numeroCalleController,
+                      label: "Número",
+                      icono: Icons.home,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El número de la dirección es obligatorio";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: ciudadController,
-                        label: "Ciudad",
-                        icono: Icons.location_city,
-                      ),
+                      controller: ciudadController,
+                      label: "Ciudad",
+                      icono: Icons.location_city,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "La ciudad es obligatoria";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: codigoPostalController,
-                        label: "Código postal",
-                        icono: Icons.local_post_office,
-                      ),
+                      controller: codigoPostalController,
+                      label: "Código postal",
+                      icono: Icons.local_post_office,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El código postal es obligatorio";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: paisController,
-                        label: "País",
-                        icono: Icons.public,
-                      ),
+                      controller: paisController,
+                      label: "País",
+                      icono: Icons.public,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "El país es obligatorio";
+                        }
+                        return null;
+                      },
+                    ),
                       const SizedBox(height: 15),
                       const Align(
                         alignment: Alignment.centerLeft,
@@ -288,11 +428,20 @@ class _RegistroClienteState extends State<RegistroCliente> {
                       ),
                       const SizedBox(height: 10),
                       CampoTexto(
-                        controller: confirmarPasswordController,
-                        label: "Confirmar contraseña",
-                        icono: Icons.lock,
-                        esPassword: true,
-                      ),
+                      controller: confirmarPasswordController,
+                      label: "Confirmar contraseña",
+                      icono: Icons.lock,
+                      esPassword: true,
+                      validator: (valor) {
+                        if (valor == null || valor.trim().isEmpty) {
+                          return "Por favor confirma tu contraseña";
+                        }
+                        if (valor != passwordController.text) {
+                          return "Las contraseñas no coinciden";
+                        }
+                        return null;
+                      },
+                    ),
 
                       const SizedBox(height: 30),
 
@@ -302,21 +451,9 @@ class _RegistroClienteState extends State<RegistroCliente> {
                         height: 55,
 
                         child: ElevatedButton(
-                          onPressed: () {
-                            print("Nombre: ${nombreController.text}");
-                            print("Apellido: ${apellidoController.text}");
-
-                            print("Correo electrónico: ${correoController.text}");
-                            print("Teléfono: ${telefonoController.text}");
-                            print("Calle: ${calleController.text}");
-                            print("Número: ${numeroCalleController.text}");
-                            print("Ciudad: ${ciudadController.text}");
-                            print("Código postal: ${codigoPostalController.text}");
-                            print("País: ${paisController.text}");
-
-                            print("Password: ${passwordController.text}");
-                            print("Confirmar contraseña: ${confirmarPasswordController.text}");
-                          },
+                          onPressed: loading 
+                          ? null
+                          : registrar,
 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color.fromRGBO(241, 56, 0, 0.774),
@@ -347,6 +484,7 @@ class _RegistroClienteState extends State<RegistroCliente> {
           ),
           
         ), 
+      ),
       ), 
     ); 
   } 
