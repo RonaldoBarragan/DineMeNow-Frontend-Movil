@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dinemenow/RestaurantCard.dart';
-// Asegúrate de que esta ruta apunte correctamente a donde guardaste tu servicio
 import 'package:dinemenow/services/homepage_services.dart';
 
 class Cliente_home extends StatefulWidget {
@@ -11,16 +9,13 @@ class Cliente_home extends StatefulWidget {
 }
 
 class _Cliente_homeState extends State<Cliente_home> {
-  // Variable de control para expandir/colapsar los filtros
   bool _showFilters = false;
 
-  // --- CONEXIÓN CON EL SERVICIO ---
   final ClienteService _apiService = ClienteService();
   List<dynamic> _clientes = [];
   bool _isLoading = true;
   String _errorMessage = '';
 
-  // Notifiers para guardar la selección de los chips
   final ValueNotifier<String> _selectedCocinaNotifier = ValueNotifier<String>(
     'Todas',
   );
@@ -47,7 +42,6 @@ class _Cliente_homeState extends State<Cliente_home> {
   ];
   final List<String> precios = ['Todos', '\$', '\$\$', '\$\$\$', '\$\$\$\$'];
 
-  // --- CICLO DE VIDA: CARGA LA API AL INICIAR ---
   @override
   void initState() {
     super.initState();
@@ -70,6 +64,24 @@ class _Cliente_homeState extends State<Cliente_home> {
     }
   }
 
+  // GETTER: NOMBRE DEL CLIENTE LOGUEADO (primer cliente de la lista) =========
+  String get _nombreClienteLogueado {
+    if (_clientes.isEmpty) return '';
+    return _clientes[0]['nombreCliente'] ?? '';
+  }
+  //===========================================================================
+
+  //RETORNAR INICIALES DEL NOMBRE DEL CLIENTE===============
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    List<String> nameParts = name.trim().split(' ');
+    if (nameParts.length > 1) {
+      return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+    }
+    return nameParts[0][0].toUpperCase();
+  }
+
+  //=======================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,7 +99,6 @@ class _Cliente_homeState extends State<Cliente_home> {
                     const SizedBox(height: 16),
                     _buildSearchBar(),
 
-                    // --- SECCIÓN DE FILTROS ANIMADOS (ABRE/CIERRA) ---
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
@@ -122,16 +133,6 @@ class _Cliente_homeState extends State<Cliente_home> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Resultados desde el Backend',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -160,42 +161,8 @@ class _Cliente_homeState extends State<Cliente_home> {
                   ),
                 ),
               )
-            else if (_clientes.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Center(
-                    child: Text(
-                      'No hay registros disponibles en este momento.',
-                    ),
-                  ),
-                ),
-              )
             else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    // Obtenemos el cliente/item actual de la lista
-                    final item = _clientes[index];
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: RestaurantCard(
-                        // NOTA: Reemplaza las llaves 'nombre', 'correo' por las que vengan en tu ClienteDto de Java
-                        name: item['nombre'] ?? 'Sin Nombre',
-                        cuisineAndZone: item['correo'] ?? 'Sin Correo',
-                        imageUrl:
-                            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-                        distance: 'Activo',
-                        closingTime: '--:--',
-                        priceCategory: '\$\$',
-                        rating: 5.0,
-                      ),
-                    );
-                  }, childCount: _clientes.length),
-                ),
-              ),
+              const SliverToBoxAdapter(child: SizedBox.shrink()),
           ],
         ),
       ),
@@ -203,7 +170,6 @@ class _Cliente_homeState extends State<Cliente_home> {
     );
   }
 
-  // Componente de Ubicación y Botón de Ayuda
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -228,22 +194,25 @@ class _Cliente_homeState extends State<Cliente_home> {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: Colors.deepOrange,
-            shape: BoxShape.circle,
-          ),
-          child: const Text(
-            '?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+
+        // CÍRCULO CON INICIALES DEL CLIENTE LOGUEADO =========================
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.deepOrange,
+          child: Text(
+            _getInitials(_nombreClienteLogueado),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ),
+        //======================================================================
       ],
     );
   }
 
-  // Componente de Barra de Búsqueda (Con Toggle de Filtros)
   Widget _buildSearchBar() {
     return Row(
       children: [
@@ -288,7 +257,6 @@ class _Cliente_homeState extends State<Cliente_home> {
     );
   }
 
-  // Componente para las filas de Chips
   Widget _buildInlineFilterSection({
     required String title,
     required List<String> options,
@@ -361,7 +329,6 @@ class _Cliente_homeState extends State<Cliente_home> {
     );
   }
 
-  // Componente de la Barra de Navegación Inferior
   Widget _buildBottomNavigationBar() {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
