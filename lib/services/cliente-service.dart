@@ -59,14 +59,34 @@ class ClienteService {
         "password": password,
       }),
     );
+    print("STATUS: ${response.statusCode}");
+    print("BODY: ${response.body}");
 
     final json = jsonDecode(response.body);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return json;
     }
-    throw Exception(
-      json["error"] ?? json["message"] ?? "Error al registrar cliente",
-    );
+
+    // Manejar errores del backend
+
+    String mensaje = "Error al registrar cliente";
+
+    // Caso correo ya registrado u otros errores directos
+    if (json["error"] != null) {
+      mensaje = json["error"];
+    }
+    // Caso errores por campos
+    else if (json["errors"] != null) {
+      final errors = json["errors"];
+
+      if (errors["correo"] != null) {
+        mensaje = errors["correo"];
+      } else if (errors["documento.numero"] != null) {
+        mensaje = errors["documento.numero"];
+      }
+    }
+
+    throw Exception(mensaje);
   }
 }

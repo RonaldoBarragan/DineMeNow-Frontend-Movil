@@ -1,3 +1,4 @@
+import 'package:dinemenow/verificacion_cliente.dart';
 import 'package:dinemenow/widgets/customappbar.dart';
 import 'package:dinemenow/widgets/inputselect.dart';
 import 'package:dinemenow/widgets/inputtext.dart';
@@ -92,10 +93,16 @@ class _RegistroClienteState extends State<RegistroCliente> {
       print(response);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Cliente registrado correctamente")),
+        const SnackBar(content: Text("codigo enviado a tu correo, por favor verifica tu cuenta")),
       );
 
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              VerificacionCodigo(email: correoController.text),
+        ),
+      );
     } catch (e) {
       setState(() {
         error = e.toString().replaceAll("Exception:", "");
@@ -462,7 +469,7 @@ class _RegistroClienteState extends State<RegistroCliente> {
                               borderRadius: BorderRadius.circular(15),
                             ),
                           ),
-
+                          
                           child: const Text(
                             "Crear cuenta",
                             style: TextStyle(
