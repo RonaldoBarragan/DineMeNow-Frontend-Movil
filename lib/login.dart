@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
 import 'cliente_home.dart';
 import 'widgets/inputtext.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 
 // Widget principal del Login
 class Login extends StatefulWidget {
