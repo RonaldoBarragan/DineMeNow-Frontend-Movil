@@ -6,7 +6,6 @@ import 'widgets/inputtext.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 
-
 // Widget principal del Login
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -30,13 +29,12 @@ class _LoginState extends State<Login> {
   bool loading = false;
   String? error;
   //metodo para iniciar sesion
- Future<void> iniciarSesion() async {
+  Future<void> iniciarSesion() async {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.isEmpty) {
       setState(() {
         error = "Ingresa correo y contraseña";
       });
-
       return;
     }
 
@@ -48,30 +46,21 @@ class _LoginState extends State<Login> {
 
       final response = await AuthService.login(
         correo: emailController.text.trim(),
-
         password: passwordController.text,
       );
 
       print("Respuesta Login:");
       print(response);
 
-      // 🔥 AQUÍ GUARDAMOS COMO EL CONTEXT DE REACT
+      final roles = response["roles"];
 
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-
-      await auth.login(response);
-
-      // obtenemos usuario ya normalizado
-
-      final user = auth.user;
-
-      if (user == null) {
-        throw Exception("No se pudo cargar usuario");
+      if (roles == null || roles.isEmpty) {
+        throw Exception("El usuario no tiene roles asignados");
       }
 
-      // validar cambio de contraseña
+      final role = roles[0].toString().toLowerCase();
 
-      if (user.mustChangePassword) {
+      if (response["mustChangePassword"] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Debe cambiar su contraseña")),
         );
@@ -79,18 +68,15 @@ class _LoginState extends State<Login> {
         return;
       }
 
-      // navegación por rol
-
-      if (user.role == "cliente") {
+      if (role.contains("cliente") || role.contains("ROL_CLIENTE")) {
         Navigator.pushReplacement(
           context,
-
-          MaterialPageRoute(builder: (context) => const ClienteHome()),
+          MaterialPageRoute(builder: (context) => const Cliente_home()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Rol no reconocido: ${user.role}")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Rol no reconocido: $role")));
       }
     } catch (e) {
       setState(() {
@@ -116,7 +102,7 @@ class _LoginState extends State<Login> {
           padding: const EdgeInsets.all(25),
 
           child: Column(
-             crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             //Organiza los elementos uno debajo del otro.
             children: [
               const SizedBox(height: 40),
@@ -172,12 +158,16 @@ class _LoginState extends State<Login> {
 
               const Text(
                 "Inicia sesión para reservar en tus restaurantes favoritos",
-                style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 121, 120, 120), leadingDistribution: TextLeadingDistribution.proportional,),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color.fromARGB(255, 121, 120, 120),
+                  leadingDistribution: TextLeadingDistribution.proportional,
+                ),
               ),
 
               const SizedBox(height: 40),
 
-             Column(
+              Column(
                 children: [
                   // USUARIO
                   CampoTexto(
@@ -195,25 +185,21 @@ class _LoginState extends State<Login> {
                     icono: Icons.lock,
                     esPassword: true,
                   ),
-                
+
                   const SizedBox(height: 10),
-                      
-                  
+
                   if (error != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
                         error!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                        ),
+                        style: const TextStyle(color: Colors.red, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  
+
                   const SizedBox(height: 10),
-                  
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -228,7 +214,8 @@ class _LoginState extends State<Login> {
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Quita el margen extra para alinearse perfecto al borde derecho
+                        tapTargetSize: MaterialTapTargetSize
+                            .shrinkWrap, // Quita el margen extra para alinearse perfecto al borde derecho
                       ),
                       child: const Text(
                         "¿Olvidaste tu contraseña?",
@@ -249,7 +236,12 @@ class _LoginState extends State<Login> {
                     child: ElevatedButton(
                       onPressed: loading ? null : iniciarSesion,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(241, 56, 0, 0.774),
+                        backgroundColor: const Color.fromRGBO(
+                          241,
+                          56,
+                          0,
+                          0.774,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -266,15 +258,16 @@ class _LoginState extends State<Login> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 25), // Espacio entre el botón y el separador
-
+                  const SizedBox(
+                    height: 25,
+                  ), // Espacio entre el botón y el separador
                   // SEPARADOR ("o") CON LÍNEAS A LOS LADOS
                   Row(
                     children: [
                       const Expanded(
                         child: Divider(
                           color: Colors.black12, // Línea gris clara
-                          thickness: 1,          // Grosor de la línea
+                          thickness: 1, // Grosor de la línea
                         ),
                       ),
                       Padding(
@@ -288,19 +281,18 @@ class _LoginState extends State<Login> {
                         ),
                       ),
                       const Expanded(
-                        child: Divider(
-                          color: Colors.black12,
-                          thickness: 1,
-                        ),
+                        child: Divider(color: Colors.black12, thickness: 1),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 25), // Espacio entre el separador y el siguiente botón
+                  const SizedBox(
+                    height: 25,
+                  ), // Espacio entre el separador y el siguiente botón
 
                   SizedBox(
-                    width: double.infinity, 
-                    height: 55,            
+                    width: double.infinity,
+                    height: 55,
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.push(
@@ -322,7 +314,9 @@ class _LoginState extends State<Login> {
                         "Crear cuenta nueva",
                         style: TextStyle(
                           fontSize: 16,
-                          color: Color(0xFF2D3748), // Color de texto oscuro/grisáceo elegante
+                          color: Color(
+                            0xFF2D3748,
+                          ), // Color de texto oscuro/grisáceo elegante
                           fontWeight: FontWeight.w600,
                         ),
                       ),
