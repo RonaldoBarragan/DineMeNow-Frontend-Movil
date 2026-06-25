@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dinemenow/services/homepage_services.dart';
+import 'package:dinemenow/widgets/navegacion.dart'; // Asegúrate de importar tu nuevo widget aquí
+// Asegúrate de importar tu nuevo widget aquí:
+// import 'package:dinemenow/widgets/custom_bottom_navigation_bar.dart';
 
 class Cliente_home extends StatefulWidget {
   const Cliente_home({Key? key}) : super(key: key);
@@ -10,6 +13,9 @@ class Cliente_home extends StatefulWidget {
 
 class _Cliente_homeState extends State<Cliente_home> {
   bool _showFilters = false;
+
+  // 1. NUEVA VARIABLE PARA CONTROLAR EL ÍNDICE ACTUAL
+  int _currentIndex = 0;
 
   final ClienteService _apiService = ClienteService();
   List<dynamic> _clientes = [];
@@ -64,14 +70,11 @@ class _Cliente_homeState extends State<Cliente_home> {
     }
   }
 
-  // GETTER: NOMBRE DEL CLIENTE LOGUEADO (primer cliente de la lista) =========
   String get _nombreClienteLogueado {
     if (_clientes.isEmpty) return '';
     return _clientes[0]['nombreCliente'] ?? '';
   }
-  //===========================================================================
 
-  //RETORNAR INICIALES DEL NOMBRE DEL CLIENTE===============
   String _getInitials(String name) {
     if (name.isEmpty) return "U";
     List<String> nameParts = name.trim().split(' ');
@@ -81,7 +84,6 @@ class _Cliente_homeState extends State<Cliente_home> {
     return nameParts[0][0].toUpperCase();
   }
 
-  //=======================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,7 +140,6 @@ class _Cliente_homeState extends State<Cliente_home> {
               ),
             ),
 
-            // --- RENDERIZADO CONDICIONAL DE LA API ---
             if (_isLoading)
               const SliverToBoxAdapter(
                 child: Padding(
@@ -166,7 +167,15 @@ class _Cliente_homeState extends State<Cliente_home> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      // 2. WIDGET REUTILIZADO PARA LA BARRA DE NAVEGACIÓN INFERIOR
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
     );
   }
 
@@ -194,8 +203,6 @@ class _Cliente_homeState extends State<Cliente_home> {
             ),
           ],
         ),
-
-        // CÍRCULO CON INICIALES DEL CLIENTE LOGUEADO =========================
         CircleAvatar(
           radius: 20,
           backgroundColor: Colors.deepOrange,
@@ -208,7 +215,6 @@ class _Cliente_homeState extends State<Cliente_home> {
             ),
           ),
         ),
-        //======================================================================
       ],
     );
   }
@@ -324,33 +330,6 @@ class _Cliente_homeState extends State<Cliente_home> {
               );
             },
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.deepOrange,
-      unselectedItemColor: Colors.grey,
-      currentIndex: 0,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Inicio',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_month_outlined),
-          label: 'Reservas',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications_none_outlined),
-          label: 'Alertas',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Perfil',
         ),
       ],
     );
