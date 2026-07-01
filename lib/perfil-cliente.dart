@@ -298,9 +298,6 @@ class _PerfilClienteState extends State<PerfilCliente> {
                 ),
               ),
             ),
-
-            // ─── BOTTOM NAV ──────────────────────────────────────────────
-            const _BottomNav(naranja: naranja),
           ],
         ),
       ),
@@ -389,94 +386,5 @@ class _Divisor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(height: 36, width: 1, color: Colors.black12);
-  }
-}
-
-// ─── WIDGET: Bottom Navigation ────────────────────────────────────────────────
-class _BottomNav extends StatelessWidget {
-  final Color naranja;
-  const _BottomNav({required this.naranja});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.black12, width: 1)),
-        color: Colors.white,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(icono: Icons.home_outlined,           label: "Inicio",   activo: false, color: naranja),
-          _NavItem(icono: Icons.calendar_today_outlined, label: "Reservas", activo: false, color: naranja),
-          _NavItemConBadge(icono: Icons.notifications_outlined, label: "Alertas", badge: "2", color: naranja),
-          _NavItem(icono: Icons.person_outlined,         label: "Perfil",   activo: true,  color: naranja),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icono;
-  final String label;
-  final bool activo;
-  final Color color;
-
-  const _NavItem({required this.icono, required this.label, required this.activo, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icono, color: activo ? color : Colors.black38, size: 24),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: activo ? color : Colors.black38,
-            fontWeight: activo ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _NavItemConBadge extends StatelessWidget {
-  final IconData icono;
-  final String label;
-  final String badge;
-  final Color color;
-
-  const _NavItemConBadge({required this.icono, required this.label, required this.badge, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(icono, color: Colors.black38, size: 24),
-            Positioned(
-              top: -4,
-              right: -6,
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black38)),
-      ],
-    );
   }
 }
