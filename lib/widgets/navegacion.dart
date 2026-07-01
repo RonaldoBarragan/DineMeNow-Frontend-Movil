@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// Asegúrate de cambiar esto por la ruta real de tu vista de reservas
+import '../reservas.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -17,7 +19,24 @@ class CustomBottomNavigationBar extends StatelessWidget {
       selectedItemColor: Colors.deepOrange,
       unselectedItemColor: Colors.grey,
       currentIndex: currentIndex,
-      onTap: onTap, // Notifica al widget padre el índice seleccionado
+
+      // Ajustamos el onTap para manejar la excepción de Reservas
+      onTap: (index) {
+        if (index == 1) {
+          // Si presiona el botón de Reservas, navega a la pantalla completa
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ReservationsView(), // Cambia por el nombre de tu clase
+            ),
+          );
+        } else {
+          // Si presiona cualquier otro botón, notifica normalmente al padre
+          onTap(index);
+        }
+      },
+
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),

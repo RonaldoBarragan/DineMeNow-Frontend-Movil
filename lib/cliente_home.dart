@@ -39,14 +39,6 @@ class _Cliente_homeState extends State<Cliente_home> {
     'Japonesa',
     'Francesa',
   ];
-  final List<String> zonas = [
-    'Todas',
-    'Zona Rosa',
-    'Chapinero',
-    'Zona T',
-    'Usaquén',
-  ];
-  final List<String> precios = ['Todos', '\$', '\$\$', '\$\$\$', '\$\$\$\$'];
 
   @override
   void initState() {
@@ -117,18 +109,6 @@ class _Cliente_homeState extends State<Cliente_home> {
                                 title: 'Cocina',
                                 options: cocinas,
                                 notifier: _selectedCocinaNotifier,
-                              ),
-                              const SizedBox(height: 14),
-                              _buildInlineFilterSection(
-                                title: 'Zona',
-                                options: zonas,
-                                notifier: _selectedZonaNotifier,
-                              ),
-                              const SizedBox(height: 14),
-                              _buildInlineFilterSection(
-                                title: 'Precio',
-                                options: precios,
-                                notifier: _selectedPrecioNotifier,
                               ),
                             ],
                           ),
