@@ -89,4 +89,36 @@ class ClienteService {
 
     throw Exception(mensaje);
   }
+  // ─── ESTADÍSTICAS DEL CLIENTE (reservas + restaurantes únicos) ───────────
+  // Llama a: GET /api/reservas/mis-reservas
+  // El backend identifica al cliente por el JWT, no necesitamos pasar el ID
+  static Future<Map<String, int>> contarEstadisticasCliente({
+    required String token,
+  }) async {
+    final response = await http.get(
+      Uri.parse("$apiUrl/reservas/mis-reservas"),
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+ 
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final List<dynamic> lista = jsonDecode(response.body);
+ 
+      // Contamos los NITs únicos para saber cuántos restaurantes distintos visitó
+      final nitsUnicos = lista
+          .map((r) => r["nitRestaurante"] as String?)
+          .whereType<String>()
+          .toSet();
+ 
+      return {
+        "reservas":     lista.length,
+        "restaurantes": nitsUnicos.length,
+      };
+    }
+ 
+    throw Exception("Error ${response.statusCode}: ${response.body}");
+  }
+
 }

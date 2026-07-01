@@ -1,5 +1,6 @@
 import 'package:dinemenow/configuracion-cliente.dart';
 import 'package:dinemenow/login.dart';
+import 'package:dinemenow/services/cliente-service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
@@ -12,48 +13,38 @@ class PerfilCliente extends StatefulWidget {
 }
 
 class _PerfilClienteState extends State<PerfilCliente> {
-  // ─── INICIALES ────────────────────────────────────────────────────────────
-  String _iniciales(String nombre) {
-    final partes = nombre.trim().split(' ');
-    if (partes.length >= 2) {
-      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
-    }
-    return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
-  }
 
-  // ─── ROL LEGIBLE ──────────────────────────────────────────────────────────
-  String _labelRol(String? role) {
-    const Map<String, String> labels = {
-      'cliente': 'Cliente',
-      'restaurante': 'Restaurante',
-      'chef': 'Chef',
-      'mesero': 'Mesero',
-      'admin': 'Administrador',
-    };
-    return labels[role] ?? (role ?? 'Sin rol');
-  }
+  // ─── ESTADO ESTADÍSTICAS ──────────────────────────────────────────────────
+  int _reservas      = 0;
+  int _restaurantes  = 0;
+  bool _loadingStats = true;
+  String? _errorStats;
 
-  // ─── LISTENER: navega al Login cuando user == null ────────────────────────
+  // Guardamos referencia al provider para usarla en dispose sin context
+  late AuthProvider _authProvider;
+
+  // ─── LIFECYCLE ────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    // Escuchamos el provider DESPUÉS del primer frame para evitar llamar
-    // Navigator durante el build
+    // Guardamos referencia ANTES del postFrameCallback
+    _authProvider = context.read<AuthProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().addListener(_onAuthChanged);
+      _authProvider.addListener(_onAuthChanged);
+      _cargarEstadisticas();
     });
   }
 
   @override
   void dispose() {
-    // Importante: remover el listener para evitar memory leaks
-    context.read<AuthProvider>().removeListener(_onAuthChanged);
+    // Usamos la referencia guardada, NO context (ya está deactivated aquí)
+    _authProvider.removeListener(_onAuthChanged);
     super.dispose();
   }
 
+  // ─── LISTENER LOGOUT ──────────────────────────────────────────────────────
   void _onAuthChanged() {
-    final auth = context.read<AuthProvider>();
-    // Si el usuario se vuelve null → ir al Login
+    final auth = _authProvider;
     if (auth.user == null && mounted) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -63,19 +54,77 @@ class _PerfilClienteState extends State<PerfilCliente> {
     }
   }
 
-  // ─── LOGOUT CON CONFIRMACIÓN ──────────────────────────────────────────────
+ // ─── CARGAR ESTADÍSTICAS (MOCK) ─────────────────────────────────────────────
+  Future<void> _cargarEstadisticas() async {
+  setState(() {
+    _reservas     = 1;
+    _restaurantes = 2;
+    _loadingStats = false;
+  });
+}
+  // ─── CARGAR ESTADÍSTICAS ──────────────────────────────────────────────────
+  /*Future<void> _cargarEstadisticas() async {
+    final user = _authProvider.user;
+    if (user == null) return;
+
+    setState(() {
+      _loadingStats = true;
+      _errorStats   = null;
+    });
+
+    try {
+      final stats = await ClienteService.contarEstadisticasCliente(
+        token: user.token ?? "",
+      );
+      if (mounted) {
+        setState(() {
+          _reservas     = stats["reservas"]     ?? 0;
+          _restaurantes = stats["restaurantes"] ?? 0;
+          _loadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorStats   = "No se pudieron cargar las estadísticas";
+          _loadingStats = false;
+        });
+      }
+    }
+  }*/
+
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
+  String _iniciales(String nombre) {
+    final partes = nombre.trim().split(' ');
+    if (partes.length >= 2) {
+      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
+    }
+    return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
+  }
+
+  String _labelRol(String? role) {
+    const Map<String, String> labels = {
+      'cliente':     'Cliente',
+      'restaurante': 'Restaurante',
+      'chef':        'Chef',
+      'mesero':      'Mesero',
+      'admin':       'Administrador',
+    };
+    return labels[role] ?? (role ?? 'Sin rol');
+  }
+
   
+
   // ─── BUILD ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
 
-    const Color naranja = Color(0xFFE8732A);
-    const Color naranjaClaro = Color(0xFFFFF3EC);
-    const Color grisTexto = Color(0xFF6B7280);
+    const Color naranja        = Color(0xFFE8732A);
+    const Color naranjaClaro   = Color(0xFFFFF3EC);
+    const Color grisTexto      = Color(0xFF6B7280);
     const Color textoPrincipal = Color(0xFF1A1A1A);
 
-    // Mientras el listener no haya navegado aún, mostramos pantalla vacía limpia
     if (user == null) {
       return const Scaffold(backgroundColor: Colors.white);
     }
@@ -85,6 +134,7 @@ class _PerfilClienteState extends State<PerfilCliente> {
       body: SafeArea(
         child: Column(
           children: [
+
             // ─── APP BAR ─────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -100,18 +150,11 @@ class _PerfilClienteState extends State<PerfilCliente> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ConfiguracionCliente(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.settings_outlined,
-                      color: textoPrincipal,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ConfiguracionCliente()),
                     ),
+                    icon: const Icon(Icons.settings_outlined, color: textoPrincipal),
                   ),
                 ],
               ),
@@ -135,7 +178,7 @@ class _PerfilClienteState extends State<PerfilCliente> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        _iniciales(user.nombre),
+                        _iniciales(user.nombre ?? ""),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 28,
@@ -148,7 +191,7 @@ class _PerfilClienteState extends State<PerfilCliente> {
 
                     // ─── NOMBRE Y CORREO ───────────────────────────────────
                     Text(
-                      user.nombre,
+                      (user.nombre ?? "Sin nombre"),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -157,7 +200,7 @@ class _PerfilClienteState extends State<PerfilCliente> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.username,
+                      (user.username ?? "Sin correo"),
                       style: const TextStyle(fontSize: 14, color: grisTexto),
                     ),
 
@@ -167,13 +210,13 @@ class _PerfilClienteState extends State<PerfilCliente> {
                     _CampoInfo(
                       icono: Icons.person_outline,
                       label: "Nombre completo",
-                      valor: user.nombre,
+                      valor: user.nombre ?? "Sin nombre",
                     ),
                     const SizedBox(height: 12),
                     _CampoInfo(
                       icono: Icons.mail_outline,
                       label: "Correo electrónico",
-                      valor: user.username,
+                      valor: user.username ?? "Sin correo",
                     ),
                     const SizedBox(height: 12),
                     _CampoInfo(
@@ -192,11 +235,7 @@ class _PerfilClienteState extends State<PerfilCliente> {
                         onPressed: () {
                           // TODO: navegar a editar perfil
                         },
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          color: naranja,
-                          size: 18,
-                        ),
+                        icon: const Icon(Icons.edit_outlined, color: naranja, size: 18),
                         label: const Text(
                           "Editar perfil",
                           style: TextStyle(
@@ -207,39 +246,51 @@ class _PerfilClienteState extends State<PerfilCliente> {
                         ),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: naranjaClaro,
-                          side: const BorderSide(
-                            color: Color(0xFFFFD9C0),
-                            width: 1,
-                          ),
+                          side: const BorderSide(color: Color(0xFFFFD9C0), width: 1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
 
-                    const SizedBox(height: 16),
-
-                    // ─── ESTADÍSTICAS ──────────────────────────────────────
+                    // ─── ESTADÍSTICAS REALES ───────────────────────────────
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.black12, width: 1),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          const _Estadistica(numero: "6", etiqueta: "Reservas"),
-                          _Divisor(),
-                          const _Estadistica(
-                            numero: "4",
-                            etiqueta: "Restaurantes",
-                          ),
-                          _Divisor(),
-                          const _Estadistica(numero: "3", etiqueta: "Reseñas"),
-                        ],
-                      ),
+                      // ⚠️ SIN const — los valores son variables de instancia
+                      child: _loadingStats
+                          ? const SizedBox(
+                              height: 48,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFE8732A),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _Estadistica(
+                                  numero:   "$_reservas",
+                                  etiqueta: "Reservas",
+                                ),
+                                _Divisor(),
+                                _Estadistica(
+                                  numero:   "$_restaurantes",
+                                  etiqueta: "Restaurantes",
+                                ),
+                              ],
+                            ),
                     ),
 
                     const SizedBox(height: 30),
@@ -287,13 +338,7 @@ class _CampoInfo extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF9CA3AF),
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
                 const SizedBox(height: 2),
                 Text(
                   valor,
@@ -333,10 +378,7 @@ class _Estadistica extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          etiqueta,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-        ),
+        Text(etiqueta, style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
       ],
     );
   }
@@ -366,30 +408,10 @@ class _BottomNav extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _NavItem(
-            icono: Icons.home_outlined,
-            label: "Inicio",
-            activo: false,
-            color: naranja,
-          ),
-          _NavItem(
-            icono: Icons.calendar_today_outlined,
-            label: "Reservas",
-            activo: false,
-            color: naranja,
-          ),
-          _NavItemConBadge(
-            icono: Icons.notifications_outlined,
-            label: "Alertas",
-            badge: "2",
-            color: naranja,
-          ),
-          _NavItem(
-            icono: Icons.person_outlined,
-            label: "Perfil",
-            activo: true,
-            color: naranja,
-          ),
+          _NavItem(icono: Icons.home_outlined,           label: "Inicio",   activo: false, color: naranja),
+          _NavItem(icono: Icons.calendar_today_outlined, label: "Reservas", activo: false, color: naranja),
+          _NavItemConBadge(icono: Icons.notifications_outlined, label: "Alertas", badge: "2", color: naranja),
+          _NavItem(icono: Icons.person_outlined,         label: "Perfil",   activo: true,  color: naranja),
         ],
       ),
     );
@@ -402,12 +424,7 @@ class _NavItem extends StatelessWidget {
   final bool activo;
   final Color color;
 
-  const _NavItem({
-    required this.icono,
-    required this.label,
-    required this.activo,
-    required this.color,
-  });
+  const _NavItem({required this.icono, required this.label, required this.activo, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -435,12 +452,7 @@ class _NavItemConBadge extends StatelessWidget {
   final String badge;
   final Color color;
 
-  const _NavItemConBadge({
-    required this.icono,
-    required this.label,
-    required this.badge,
-    required this.color,
-  });
+  const _NavItemConBadge({required this.icono, required this.label, required this.badge, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -457,23 +469,13 @@ class _NavItemConBadge extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                child: Text(
-                  badge,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: Colors.black38),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black38)),
       ],
     );
   }

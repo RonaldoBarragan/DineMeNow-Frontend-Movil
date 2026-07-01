@@ -65,28 +65,25 @@ class AuthProvider extends ChangeNotifier {
   }
 
   UserModel mapLoginResponse(Map<String, dynamic> data) {
-    var rawRole;
-
-    if (data["roles"] is List) {
-      rawRole = data["roles"][0];
-    } else {
-      rawRole = data["roles"];
-    }
-
-    return UserModel(
-      id: data["id"] ?? "",
-
-      username: data["correo"] ?? "",
-
-      nombre: data["nombre"] ?? "",
-
-      token: data["token"],
-
-      role: normalizeRole(rawRole),
-
-      mustChangePassword: data["mustChangePassword"] ?? false,
-    );
+  var rawRole;
+ 
+  if (data["roles"] is List) {
+    rawRole = data["roles"][0];
+  } else {
+    rawRole = data["roles"];
   }
+ 
+  return UserModel(
+    id:       data["id"]      ?? "",
+    username: data["correo"]  ?? "", // el backend manda "correo"
+    nombre:   data["nombre"]  ?? "",
+    apellido: data["apellido"],      // ← nuevo campo
+    token:    data["token"],
+    role:     normalizeRole(rawRole),
+    mustChangePassword: data["mustChangePassword"] ?? false,
+  );
+}
+ 
 
   String? normalizeRole(dynamic raw) {
     if (raw == null) return null;
