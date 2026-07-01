@@ -1,10 +1,10 @@
+import 'package:dinemenow/providers/auth_provider.dart';
 import 'package:dinemenow/registro-cliente.dart';
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart';
-import 'cliente_home.dart';
-import 'widgets/inputtext.dart';
 import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
+import 'services/auth_service.dart';
+import 'widgets/inputtext.dart';
+import 'cliente_main.dart';
 
 // Widget principal del Login
 class Login extends StatefulWidget {
@@ -69,9 +69,10 @@ class _LoginState extends State<Login> {
       }
 
       if (role.contains("cliente") || role.contains("ROL_CLIENTE")) {
+        await context.read<AuthProvider>().login(response);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Cliente_home()),
+          MaterialPageRoute(builder: (context) => const ClienteMain()),
         );
       } else {
         ScaffoldMessenger.of(
