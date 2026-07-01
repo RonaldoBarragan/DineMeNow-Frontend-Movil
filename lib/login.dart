@@ -1,4 +1,3 @@
-import 'package:dinemenow/perfil-cliente.dart';
 import 'package:dinemenow/registro-cliente.dart';
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
@@ -86,7 +85,7 @@ class _LoginState extends State<Login> {
         Navigator.pushReplacement(
           context,
 
-          MaterialPageRoute(builder: (context) => const PerfilCliente()),
+          MaterialPageRoute(builder: (context) => const ClienteHome()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
